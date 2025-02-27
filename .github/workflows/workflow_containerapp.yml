@@ -6,6 +6,9 @@ name: Build and Deploy to Container App
 on:
   workflow_dispatch:
 
+permissions:
+  id-token: write
+
 jobs:
 
   build:
@@ -13,6 +16,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+    - name: Login to Azure
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    
     - name: Checkout repository
       uses: actions/checkout@v4
       
@@ -26,9 +37,29 @@ jobs:
       
     - name: Build with dotnet
       run: dotnet build --no-restore
-
+      
+    - name: Get Latest Container Image Tag
+      id: get_tag
+      run: |
+        TAG=$(az acr repository show-tags --name $ACR_REGISTRYNAME --repository $ACR_REPO --orderby time_desc --output tsv --detail | head -n 1 | awk '{print $4}')
+        NUMERIC_TAG=$(echo "$TAG" | grep -oE '[0-9]+')
+        INCREMENTED_TAG=$((NUMERIC_TAG + 1))
+        UPDATED_TAG=$(echo "$TAG" | sed "s/$NUMERIC_TAG/$INCREMENTED_TAG/")
+        echo "image_tag=$UPDATED_TAG" >> $GITHUB_OUTPUT
+        
     - name: Build and Push Image
       run: |
-        az acr login --name asctrregyovaukoehxbni --username ${{ secrets.ACR_USERNAME }} --password ${{ secrets.ACR_PASSWORD }} &&
-        docker build -t asctrregyovaukoehxbni.azurecr.io/microhackapp:1 -f Dockerfile . &&
-        docker push asctrregyovaukoehxbni.azurecr.io/microhackapp:1
+        az acr login --name $ACR_REGISTRYNAME --username ${{ secrets.ACR_USERNAME }} --password ${{ secrets.ACR_PASSWORD }} &&
+        docker build -t ACR_REGISTRY_URL/$ACR_REPO:${{ steps.get_tag.outputs.image_tag }} -f Dockerfile . &&
+        docker push ACR_REGISTRY_URL/$ACR_REPO:${{ steps.get_tag.outputs.image_tag }}
+
+    - name: Deploy to Container App
+      uses: azure/container-apps-deploy-action@v2
+      with:
+        imageToDeploy: microhackregistry.azurecr.io/microhackapp:${{ steps.get_tag.outputs.image_tag }}
+        acrUsername: ${{ secrets.ACR_USERNAME }}
+        acrPassword: ${{ secrets.ACR_PASSWORD }}
+        resourceGroup: MicroHack-AppServiceToContainerApp
+        containerAppEnvironment: microhack-containerappenvironment
+        containerAppName: microhack-containerapp
+        targetPort: 8080

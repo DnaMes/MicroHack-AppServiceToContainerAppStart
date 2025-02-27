@@ -1,7 +1,6 @@
 param managedIdName string
 param location string
-param userAssIdName string
-param registryName string
+param federalCredential string
 
 resource userAssignedIdentities_resource 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' = {
   name: managedIdName
@@ -10,10 +9,10 @@ resource userAssignedIdentities_resource 'Microsoft.ManagedIdentity/userAssigned
 
 resource userAssignedIdentities_microhack_identity_name_userAssignedIdentities_microhack_identity_name 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-07-31-preview' = {
   parent: userAssignedIdentities_resource
-  name: userAssIdName
+  name: federalCredential
   properties: {
     issuer: 'https://token.actions.githubusercontent.com'
-    subject: 'repo:ivmicrohackazdayberlin/MicroHack-AppServiceToContainerAppStart:ref:refs/heads/main'
+    subject: 'repo:DnaMes/MicroHack-AppServiceToContainerAppStart:ref:refs/heads/main'
     audiences: [
       'api://AzureADTokenExchange'
     ]

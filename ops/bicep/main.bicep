@@ -1,14 +1,19 @@
-param asp string = 'asp'
-param appService string = 'webapp'
-param ctrRegistry string = 'ctrReg'
-param registryName string = 'asctrregyovaukoehxbni'
-param managedId string = 'manId'
-param location string = resourceGroup().location
+param location string = resourceGroup().location // location of the resources
+
+// WebApp
+param asp string = 'asp' // app service plan
+param appService string = 'webapp' // web app
+
+// Container Registry
+param ctrRegistry string = 'ctrReg' // container registry
+// Managed ID
+param managedId string = 'manId' // managed identity
+param federedCredential string = 'microhack-identitycredentials' // federated credential for container registry
 // give an unique name to the app service
 var appServicePlanName = toLower('as-${asp}-${uniqueString(resourceGroup().id)}')
 var appServiceName = toLower('as-${appService}-${uniqueString(resourceGroup().id)}')
 var ctrRegistryName = toLower('as${ctrRegistry}${uniqueString(resourceGroup().id)}')
-var managedIdentityName = toLower('as${managedId}${uniqueString(resourceGroup().id)}')
+var managedIdentityName = toLower('as-${managedId}-${uniqueString(resourceGroup().id)}')
 
 module appServicePlanModule './modules/appservicePlan.bicep' = {
   name: '${appServicePlanName}-Deployment'
@@ -32,5 +37,14 @@ module containerRegistryModule './modules/containerRegistry.bicep' = {
   params: {
     containerRegistryName: ctrRegistryName
     location: location
+  }
+}
+
+module ctrRegistryAccessKeyModule './modules/ctrRegistryAccessKey.bicep' = {
+  name: '${managedIdentityName}-Deployment'
+  params: {
+    managedIdName: managedIdentityName
+    location: location
+    federalCredential: federedCredential
   }
 }
