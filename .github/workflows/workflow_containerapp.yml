@@ -41,7 +41,7 @@ jobs:
     - name: Get Latest Container Image Tag
       id: get_tag
       run: |
-        TAG=$(az acr repository show-tags --name $ACR_REGISTRYNAME --repository $ACR_REPO --orderby time_desc --output tsv --detail | head -n 1 | awk '{print $4}')
+        TAG=$(az acr repository show-tags --name asctrregyovaukoehxbni --repository microhackapp --orderby time_desc --output tsv --detail | head -n 1 | awk '{print $4}')
         NUMERIC_TAG=$(echo "$TAG" | grep -oE '[0-9]+')
         INCREMENTED_TAG=$((NUMERIC_TAG + 1))
         UPDATED_TAG=$(echo "$TAG" | sed "s/$NUMERIC_TAG/$INCREMENTED_TAG/")
@@ -49,9 +49,9 @@ jobs:
         
     - name: Build and Push Image
       run: |
-        az acr login --name $ACR_REGISTRYNAME --username ${{ secrets.ACR_USERNAME }} --password ${{ secrets.ACR_PASSWORD }} &&
-        docker build -t ACR_REGISTRY_URL/$ACR_REPO:${{ steps.get_tag.outputs.image_tag }} -f Dockerfile . &&
-        docker push ACR_REGISTRY_URL/$ACR_REPO:${{ steps.get_tag.outputs.image_tag }}
+        az acr login --name "$ACR_REGISTRYNAME" --username ${{ secrets.ACR_USERNAME }} --password ${{ secrets.ACR_PASSWORD }} &&
+        docker build -t asctrregyovaukoehxbni.azurecr.io/microhackapp:${{ steps.get_tag.outputs.image_tag }} -f Dockerfile . &&
+        docker push asctrregyovaukoehxbni.azurecr.io/microhackapp:${{ steps.get_tag.outputs.image_tag }}
 
     - name: Deploy to Container App
       uses: azure/container-apps-deploy-action@v2
@@ -60,6 +60,6 @@ jobs:
         acrUsername: ${{ secrets.ACR_USERNAME }}
         acrPassword: ${{ secrets.ACR_PASSWORD }}
         resourceGroup: MicroHack-AppServiceToContainerApp
-        containerAppEnvironment: microhack-containerappenvironment
-        containerAppName: microhack-containerapp
+        containerAppEnvironment: as-ctrapp-yovaukoehxbni
+        containerAppName: microhackapp
         targetPort: 8080
